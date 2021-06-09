@@ -25,159 +25,18 @@ function pageParser(page) {
 
 function cellParser(cell) {
   let content = []
+  let parsedComponent = null
   for (let component of cell.children) {
     if (component.classList.contains('article-component')) {
-      content.push(componentParser(component))
+      parsedComponent = componentParser(component)
     } else if (component.classList.contains('expandable')) {
-      content.push(expandableDivParser(component))
+      parsedComponent = expandableDivParser(component)
+    }
+    if (parsedComponent) {
+      content.push(parsedComponent)
     }
   }
   return content
-}
-
-function componentParser(component) {
-  if (component.classList.contains('box-summary')) {
-    return boxParser(component, 'olive')
-  } else if (component.classList.contains('box-standard')) {
-    return boxParser(component, 'default')
-  } else {
-    let content = []
-    for (let child of component.children) {
-      if (child.classList.contains('article-component')) {
-        content.push(componentParser(child))
-      } else if (child.classList.contains('gca-component')) {
-        content.push(audioComponent())
-      } else {
-        parsedEl = distributor(child)
-        if(parsedEl) {
-          content.push(parsedEl)
-        }
-      }
-    }
-    return content
-  }
-}
-
-function distributor(el) {
-  let parsedEl = null
-  switch (el.tagName) {
-    case "P":
-      parsedEl = pTagParser(el)
-      break
-    case "STRONG":
-      parsedEl = pTagParser(el)
-      break
-    case "EM":
-      parsedEl = pTagParser(el)
-      break
-    case "UL":
-      parsedEl = listTagParser(el)
-      break
-    case "OL":
-      parsedEl = listTagParser(el)
-      break
-    case "BLOCKQUOTE":
-      parsedEl = blockquoteParser(el)
-      break
-    case "TABLE":
-      parsedEl = tableParser(el)
-      break
-    case "H4":
-      parsedEl = h4TagParser(el)
-      break
-  }
-  return parsedEl
-}
-
-function boxParser(box, color) {
-  let children = box.children
-  let content = []
-  for (let child of children) {
-    if (child.classList.contains('article-component')) {
-      content.push(componentParser(child))
-    }
-  }
-  content = content.flat()
-  let parsedBox = boxGenerator(content, color)
-  return parsedBox
-}
-
-function boxGenerator(content, color) {
-  let box = document.createElement('div')
-  box.classList.add("simplebox")
-  box.setAttribute("data-show-header", "true")
-  box.classList.add(`hypo-box-${color}`)
-  box.setAttribute("data-box-class", `hypo-box-${color}`)
-
-  let title = document.createElement('h4')
-  if (content[0].tagName == "H4") {
-    title = content.shift()
-  }
-  title.classList.add("simplebox-title")
-  box.appendChild(title)
-
-  let contentDiv = document.createElement('div')
-  contentDiv.classList.add('simplebox-content')
-
-  for (let c of content) {
-    contentDiv.appendChild(c)
-  }
-  box.appendChild(contentDiv)
-  return box
-}
-
-function pTagParser(p) {
-  if (p.textContent.trim().length == 0) {
-    return null
-  }
-  let el = null
-  let isH4 = p.classList.contains('title-2') || p.classList.contains('title-3') || p.classList.contains('ingress')
-  if (isH4) {
-    el = document.createElement("h4")
-    el.appendChild(document.createTextNode(p.textContent))
-  } else if (Array.from(p.children).some(c => c.tagName == "IMG")) {
-    el = document.createElement("p")
-    el.innerHTML = "<strong>insert image here</strong>"
-  } else {
-    el = document.createElement("p")
-    let html = p.innerHTML
-    html = html.replaceAll(`class="blue-text"`, `style="color:#000080;"`).replaceAll(` lang="sv_se"`, "").replaceAll('<em>', '<i>').replaceAll('</em>', '</i>').replaceAll('&nbsp;', ' ')
-    if (p.classList.contains('text-small')) {
-      html = '<sub>' + html + '</sub>'
-    }
-    if (p.classList.contains('underline')) {
-      html = '<u>' + html + '</u>'
-    }
-    el.innerHTML = html
-
-    if (p.classList.contains('indent')) {
-      el.classList.add('hypo-text-indent')
-    }
-
-  }
-  return el
-}
-
-function listTagParser(ul) {
-  return ul
-}
-
-function blockquoteParser(bq) {
-  let author = bq.lastElementChild
-  bq.removeChild(author)
-  let parsedBq = document.createElement('blockquote')
-  let p = document.createElement('p')
-  p.innerHTML = bq.innerHTML + '<br><sub>' + author.innerHTML + '</sub>'
-  parsedBq.appendChild(p)
-  return parsedBq
-}
-
-function audioComponent() {
-  el = document.createElement("div")
-  el.innerHTML = `<div class="hypo-audio" style="text-align:center"><audio controls="controls" controlslist="nodownload" src="this.data.src"><source src="this.data.src" /></audio></div>`
-  el = el.firstElementChild
-
-  return el
 }
 
 function expandableDivParser(box) {
@@ -199,42 +58,418 @@ function expandableDivParser(box) {
   return boxGenerator(content, "default")
 }
 
-function h4TagParser(h4) {
-  let el = document.createElement('h4')
-  el.innerHTML = h4.firstChild.textContent
+function componentParser(component) {
+  if (component.classList.contains('box-summary')) {
+    return boxParser(component, 'olive')
+  } else if (component.classList.contains('box-standard')) {
+    return boxParser(component, 'default')
+  } else if (component.classList.contains('box-help')) {
+    return boxParser(component, 'yellow')
+  } else if (component.classList.contains('box-practise')) {
+    return boxParser(component, 'blue')
+  } else if (component.classList.contains('box-example')) {
+    return boxParser(component, 'pink')
+  } else {
+    let content = []
+    for (let child of component.children) {
+      if (child.classList.contains('article-component')) {
+        content.push(componentParser(child))
+      } else if (child.classList.contains('gca-component')) {
+        content.push(audioComponent())
+      } else if (child.classList.contains('questbox')) {
+        return null
+      } else {
+        let parsedEl = distributor(child)
+        if (parsedEl) {
+          content.push(parsedEl)
+        }
+      }
+    }
+    return content
+  }
+}
+
+function audioComponent() {
+  let el = document.createElement("div")
+  el.innerHTML = `<div class="hypo-audio" style="text-align:center"><audio controls="controls" controlslist="nodownload" src="this.data.src"><source src="this.data.src" /></audio></div>`
+  el = el.firstElementChild
   return el
 }
 
-function tableParser(table) {
-  let div = document.createElement('div')
-  div.classList.add('table-responsive')
-  let newTable = document.createElement('table')
-  newTable.classList.add(['hypo-table-responsive', 'table', 'table-bordered'])
-  let newTBody = document.createElement('tbody')
-  for (let row of table.querySelectorAll('tr')) {
-    let newRow = document.createElement('tr')
-
-    for (let col of row.children) {
-      if (col.textContent.trim().length == 0) {
-        continue
-      }
-      let newCol = document.createElement(col.tagName)
-
-      newCol.innerHTML = col.innerHTML
-
-      let colspan = col.getAttribute('colspan')
-      if (colspan) {
-        newCol.setAttribute('colspan', colspan)
-      }
-      newRow.appendChild(newCol)
+function boxParser(box, color) {
+  let children = box.children
+  let content = []
+  for (let child of children) {
+    if (child.classList.contains('article-component')) {
+      content.push(componentParser(child))
     }
+  }
+  content = content.flat()
+  let parsedBox = boxGenerator(content, color)
+  return parsedBox
+}
 
-    if (newRow.firstChild) {
-      newTBody.appendChild(newRow)
+function distributor(el) {
+  if (el.tagName == undefined) {
+    return el
+  }
+  if (el.classList.contains('htmlcomponent-header')) {
+    return componentHeaderParser(el)
+  }
+  switch (el.tagName) {
+    case "P":
+      return pTagParser(el)
+    case "STRONG":
+      return strongTagParser(el)
+    case "EM":
+      return emTagParser(el)
+    case "UL":
+      return ulTagParser(el)
+    case "OL":
+      return olTagParser(el)
+    case "BLOCKQUOTE":
+      return blockquoteParser(el)
+    case "TABLE":
+      return tableParser(el)
+    case "H4":
+      return h4TagParser(el)
+    case "SPAN":
+      return spanTagParser(el)
+    case "LI":
+      return liTagParser(el)
+    case "TBODY":
+      return tbodyTagParser(el)
+    case "TR":
+      return trTagParser(el)
+    case "TD":
+      return tdTagParser(el)
+    case "TH":
+      return thTagParser(el)
+    case 'BR':
+      return el
+    case 'FIGURE':
+      let temp = document.createElement('p')
+      temp.innerHTML = "<strong>[insert image here]</strong>"
+      return temp
+  }
+}
+
+function boxGenerator(content, color) {
+  let box = document.createElement('div')
+  box.classList.add("simplebox")
+  box.setAttribute("data-show-header", "true")
+  box.classList.add(`hypo-box-${color}`)
+  box.setAttribute("data-box-class", `hypo-box-${color}`)
+
+  console.log(content[0])
+  let title = document.createElement('h4')
+  if (content[0].tagName == "H4") {
+    title = content.shift()
+  }
+  title.classList.add("simplebox-title")
+  box.appendChild(title)
+
+  let contentDiv = document.createElement('div')
+  contentDiv.classList.add('simplebox-content')
+
+  for (let c of content) {
+    contentDiv.appendChild(c)
+  }
+  box.appendChild(contentDiv)
+  return box
+}
+
+function componentHeaderParser(el) {
+  let parsedEl = document.createElement('h4')
+  let node = distributor(el.firstChild)
+  parsedEl.appendChild(node)
+  return parsedEl
+}
+
+function pTagParser(el) {
+  if (el.textContent.trim().length == 0) {
+    return null
+  }
+
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
     }
   }
 
-  newTable.appendChild(newTBody)
-  div.appendChild(newTable)
-  return div
+  if (el.classList.contains('title-2') || el.classList.contains('title-3') || el.classList.contains('ingress')) {
+    parsedEl = document.createElement("h4")
+    nodes.forEach(node => parsedEl.appendChild(node))
+  }
+
+  else if (Array.from(el.children).some(c => c.tagName == "IMG")) {
+    parsedEl.innerHTML = "<strong>[insert image here]</strong>"
+  }
+
+  else {
+    nodes.forEach(node => parsedEl.appendChild(node))
+
+    parsedEl.innerHTML = parsedEl.innerHTML.replaceAll('&nbsp;', ' ')
+
+    if (el.classList.contains('text-small')) {
+      parsedEl.innerHTML = '<sub>' + parsedEl.innerHTML + '</sub>'
+    }
+
+    if (el.classList.contains('underline')) {
+      parsedEl.innerHTML = '<u>' + parsedEl.innerHTML + '</u>'
+    }
+
+    if (el.classList.contains('indent')) {
+      parsedEl.classList.add('hypo-text-indent')
+    }
+
+  }
+  return parsedEl
+}
+
+function strongTagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  return parsedEl
+}
+
+function emTagParser(el) {
+  let parsedEl = document.createElement('i')
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  return parsedEl
+}
+
+function ulTagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  return parsedEl
+}
+
+function olTagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  return parsedEl
+}
+
+function liTagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  return parsedEl
+}
+
+function blockquoteParser(el) {
+  let author = el.querySelector('.quote-source')
+  if (author) {
+    el.removeChild(author)
+  }
+
+  let parsedEl = document.createElement(el.tagName)
+  let p = document.createElement('p')
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => p.appendChild(node))
+
+  if (author) {
+    p.innerHTML = p.innerHTML + '<br><sub>' + author.innerHTML + '</sub>'
+  }
+  parsedEl.appendChild(p)
+  return parsedEl
+}
+
+function h4TagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  return parsedEl
+}
+
+function spanTagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  if (el.classList.contains('blue-text')) {
+    parsedEl.style = `color:#000080;`
+  }
+
+  return parsedEl
+}
+
+function tableParser(el) {
+  let parsedDiv = document.createElement('div')
+  parsedDiv.classList.add('table-responsive')
+  let parsedTable = document.createElement('table')
+  parsedTable.classList.add(['hypo-table-responsive', 'table', 'table-bordered'])
+
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedTable.appendChild(node))
+
+  parsedDiv.appendChild(parsedTable)
+  return parsedDiv
+}
+
+function tbodyTagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  return parsedEl
+}
+
+function trTagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.children) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  return parsedEl
+}
+
+function tdTagParser(el) {
+  if (el.textContent.trim().length == 0) {
+    return
+  }
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  let colspan = el.getAttribute('colspan')
+  if (colspan) {
+    parsedEl.setAttribute('colspan', colspan)
+  }
+
+  return parsedEl
+}
+
+function thTagParser(el) {
+  if (el.textContent.trim().length == 0) {
+    return
+  }
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  let colspan = el.getAttribute('colspan')
+  if (colspan) {
+    parsedEl.setAttribute('colspan', colspan)
+  }
+
+  return parsedEl
 }
