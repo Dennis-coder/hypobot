@@ -1,11 +1,13 @@
-function parse(main) {
+export function parser(html) {
+  let main = document.createElement('div')
+  main.innerHTML = html
   let pages = main.querySelectorAll('.article-page')
   let content = []
   for (let page of pages) {
     content.push(pageParser(page))
   }
   content = content.flat(Infinity)
-  temp = document.createElement('div')
+  let temp = document.createElement('div')
   for (let el of content) {
     temp.appendChild(el)
   }
@@ -74,7 +76,7 @@ function boxParser(box, color) {
     }
   }
   content = content.flat()
-  parsedBox = boxGenerator(content, color)
+  let parsedBox = boxGenerator(content, color)
   return parsedBox
 }
 
@@ -89,7 +91,7 @@ function boxGenerator(content, color) {
   title.classList.add("simplebox-title")
 
   box.appendChild(title)
-  contentDiv = document.createElement('div')
+  let contentDiv = document.createElement('div')
   contentDiv.classList.add('simplebox-content')
 
   for (let c of content) {
