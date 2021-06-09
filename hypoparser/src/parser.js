@@ -65,7 +65,7 @@ function componentParser(component) {
     return boxParser(component, 'default')
   } else if (component.classList.contains('box-help')) {
     return boxParser(component, 'yellow')
-  } else if (component.classList.contains('box-practise')) {
+  } else if (component.classList.contains('box-practice')) {
     return boxParser(component, 'blue')
   } else if (component.classList.contains('box-example')) {
     return boxParser(component, 'pink')
@@ -161,7 +161,6 @@ function boxGenerator(content, color) {
   box.classList.add(`hypo-box-${color}`)
   box.setAttribute("data-box-class", `hypo-box-${color}`)
 
-  console.log(content[0])
   let title = document.createElement('h4')
   if (content[0].tagName == "H4") {
     title = content.shift()
