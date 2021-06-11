@@ -168,11 +168,7 @@ function distributor(el) {
       return thTagParser(el)
     case 'BR':
       return el
-    case 'FIGURE':
-      let temp = document.createElement('p')
-      temp.innerHTML = "<strong>[insert image here]</strong>"
-      return temp
-    case 'IMG':
+    case 'FIGURE' || 'IMG':
       let temp = document.createElement('p')
       temp.innerHTML = "<strong>[insert image here]</strong>"
       return temp
@@ -211,11 +207,7 @@ function componentHeaderParser(el) {
 }
 
 function pTagParser(el) {
-  if (el.textContent.trim().length == 0) {
-    return null
-  }
-
-  let parsedEl = document.createElement(el.tagName)
+    let parsedEl = document.createElement(el.tagName)
   let nodes = []
 
   for (let child of el.childNodes) {
@@ -238,6 +230,10 @@ function pTagParser(el) {
     nodes.forEach(node => parsedEl.appendChild(node))
 
     parsedEl.innerHTML = parsedEl.innerHTML.replaceAll('&nbsp;', ' ')
+
+    if (parsedEl.textContent.trim().length == 0) {
+      return null
+    }
 
     if (el.classList.contains('text-small')) {
       parsedEl.innerHTML = '<sub>' + parsedEl.innerHTML + '</sub>'
