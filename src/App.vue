@@ -10,8 +10,6 @@
       text-gray-200
     "
   >
-    <nav class="w-full bg-blue-600"></nav>
-
     <main class="max-w-screen-lg w-full flex flex-col items-center">
       <div class="w-full">
         <h3>Input</h3>
@@ -36,6 +34,10 @@
         <button @click="copyToClipboard" class="button">Copy output</button>
         <button @click="clear" class="button">Clear text</button>
       </div>
+      <div class="my-4">
+        <h3>Preview</h3>
+        <div ref="preview" class="preview" v-html="output"></div>
+      </div>
     </main>
   </div>
 </template>
@@ -48,6 +50,7 @@ export default {
   setup() {
     const input = ref("");
     const output = ref("");
+    const preview = ref(null);
 
     const copyToClipboard = function () {
       let copy = document.createElement("textarea");
@@ -73,6 +76,7 @@ export default {
     return {
       input,
       output,
+      preview,
       copyToClipboard,
       parse,
       clear,
@@ -91,6 +95,37 @@ export default {
 }
 
 .button {
-  @apply mt-2 bg-blue-500 border-4 border-blue-500 rounded-full py-1 px-2 focus:outline-none hover:border-blue-600 focus:bg-blue-600;
+  @apply mt-2 bg-blue-500 border-4 border-blue-500 rounded-full py-1 w-32 focus:outline-none hover:border-blue-600 focus:bg-blue-600 ;
+}
+
+.preview {
+  width: 550px;
+  padding: 50px;
+  @apply bg-gray-70 text-left;
+}
+
+.preview h4 {
+  margin: 25px 0 6px 0;
+  padding: 0 0 0 10px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.preview p {
+  padding: 0 10px 10px 10px;
+}
+
+.preview ul {
+  padding: 0 10px 0 30px;
+  list-style-type: disc;
+}
+
+.preview li {
+  margin-top: 5px;
+}
+
+.preview ul li:last-child,
+.preview ol li:last-child {
+  margin-bottom: 10px;
 }
 </style>

@@ -1,22 +1,35 @@
 export function parser(html) {
   let main = document.createElement('div')
   main.innerHTML = html
-  let pages = main.querySelectorAll('.article-page')
   let content = []
-  for (let page of pages) {
-    content.push(pageParser(page))
+
+  let pages = main.querySelectorAll('.article-page')
+  if (pages.length == 0) {
+    pages = [main]
   }
+
+  for (let page of pages) {
+    let parsedPage = pageParser(page)
+    content.push(parsedPage)
+  }
+
   content = content.flat(Infinity)
   let temp = document.createElement('div')
   for (let el of content) {
     temp.appendChild(el)
   }
+  
   return temp.innerHTML
 }
 
 function pageParser(page) {
   let cells = page.querySelectorAll('.cell:not(.cell-empty) .cell-content')
   let content = []
+
+  if (cells.length == 0) {
+    cells = [page]
+  }
+
   for (let cell of cells) {
     content.push(cellParser(cell))
   }
@@ -26,11 +39,19 @@ function pageParser(page) {
 function cellParser(cell) {
   let content = []
   let parsedComponent = null
-  for (let component of cell.children) {
+  let components = cell.children
+
+  if (components.length == 0) {
+    components = [cell]
+  }
+
+  for (let component of components) {
     if (component.classList.contains('article-component')) {
       parsedComponent = componentParser(component)
     } else if (component.classList.contains('expandable')) {
       parsedComponent = expandableDivParser(component)
+    } else {
+      parsedComponent = distributor(component)
     }
     if (parsedComponent) {
       content.push(parsedComponent)
