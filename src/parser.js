@@ -1,5 +1,3 @@
-import { parse } from '@babel/parser';
-
 const Mathml2latex = require('mathml-to-latex');
 
 export function parser(html) {
@@ -218,6 +216,10 @@ function componentHeaderParser(el) {
 function equationHandler(el) {
   let equation = el.getAttribute('data-mathml')
   equation = Mathml2latex.convert(equation)
+
+  if (equation.substring(0, 13) == "\\left{\\right.") {
+    equation = equation.replace("\\left{\\right.", "\\begin{cases}") + "\\end{cases}"
+  }
   equation = "\\(" + equation + "\\)"
 
   let parsedEl = document.createElement('span')
