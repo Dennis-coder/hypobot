@@ -1,3 +1,7 @@
+import { parse } from '@babel/parser';
+
+const Mathml2latex = require('mathml-to-latex');
+
 export function parser(html) {
   let main = document.createElement('div')
   main.innerHTML = html
@@ -137,6 +141,9 @@ function distributor(el) {
   if (el.classList.contains('htmlcomponent-header')) {
     return componentHeaderParser(el)
   }
+  if (el.classList.contains('mjx-chtml')) {
+    return equationHandler(el)
+  }
   switch (el.tagName) {
     case "P":
       return pTagParser(el)
@@ -149,9 +156,9 @@ function distributor(el) {
     case "OL":
       return olTagParser(el)
     case "BLOCKQUOTE":
-      return blockquoteParser(el)
+      return blockquoteTagParser(el)
     case "TABLE":
-      return tableParser(el)
+      return tableTagParser(el)
     case "H4":
       return h4TagParser(el)
     case "SPAN":
@@ -205,6 +212,18 @@ function componentHeaderParser(el) {
   let parsedEl = document.createElement('h4')
   let node = distributor(el.firstChild)
   parsedEl.appendChild(node)
+  return parsedEl
+}
+
+function equationHandler(el) {
+  let equation = el.getAttribute('data-mathml')
+  equation = Mathml2latex.convert(equation)
+  equation = "\\(" + equation + "\\)"
+
+  let parsedEl = document.createElement('span')
+  parsedEl.classList.add('math-tex')
+  parsedEl.innerHTML = equation
+
   return parsedEl
 }
 
@@ -333,7 +352,7 @@ function liTagParser(el) {
   return parsedEl
 }
 
-function blockquoteParser(el) {
+function blockquoteTagParser(el) {
   let author = el.querySelector('.quote-source')
   if (author) {
     el.removeChild(author)
@@ -395,7 +414,7 @@ function spanTagParser(el) {
   return parsedEl
 }
 
-function tableParser(el) {
+function tableTagParser(el) {
   let parsedDiv = document.createElement('div')
   parsedDiv.classList.add('table-responsive')
   let parsedTable = document.createElement('table')
