@@ -172,6 +172,10 @@ function distributor(el) {
       let temp = document.createElement('p')
       temp.innerHTML = "<strong>[insert image here]</strong>"
       return temp
+    case 'IMG':
+      let temp = document.createElement('p')
+      temp.innerHTML = "<strong>[insert image here]</strong>"
+      return temp
   }
 }
 
