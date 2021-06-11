@@ -168,10 +168,12 @@ function distributor(el) {
       return thTagParser(el)
     case 'BR':
       return el
-    case 'FIGURE' || 'IMG':
-      let temp = document.createElement('p')
-      temp.innerHTML = "<strong>[insert image here]</strong>"
-      return temp
+    case 'FIGURE':
+      return figureTagParser(el)
+    case 'IMG':
+      return imgTagParser(el)
+    case 'SUB':
+      return subTagParser(el)
   }
 }
 
@@ -492,4 +494,32 @@ function thTagParser(el) {
   }
 
   return parsedEl
+}
+
+function subTagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  return parsedEl
+}
+
+function figureTagParser(el) {
+  let temp = document.createElement('p')
+  temp.innerHTML = "<strong>[insert image here]</strong>"
+  return temp
+}
+
+function imgTagParser(el) {
+  let temp = document.createElement('p')
+  temp.innerHTML = "<strong>[insert image here]</strong>"
+  return temp
 }
