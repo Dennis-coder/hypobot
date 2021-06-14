@@ -10,32 +10,37 @@ export function parser(html) {
     pages = [main]
   }
 
+
   for (let page of pages) {
     let parsedPage = pageParser(page)
     content.push(parsedPage)
   }
 
-  content = content.flat(Infinity)
-  let temp = document.createElement('div')
-  for (let el of content) {
-    temp.appendChild(el)
+  let out = []
+  for (let pageContent of content) {
+    let temp = document.createElement('div')
+    for (let el of pageContent) {
+      temp.appendChild(el)
+    }
+    out.push(temp.innerHTML)
   }
-  
-  return temp.innerHTML
+
+  return out
 }
 
 function pageParser(page) {
-  let cells = page.querySelectorAll('.cell:not(.cell-empty) .cell-content')
   let content = []
 
+  let cells = page.querySelectorAll('.cell:not(.cell-empty) .cell-content')
   if (cells.length == 0) {
     cells = [page]
   }
 
   for (let cell of cells) {
-    content.push(cellParser(cell))
+    let parsedCell = cellParser(cell)
+    content.push(parsedCell)
   }
-  return content
+  return content.flat(Infinity)
 }
 
 function cellParser(cell) {
@@ -230,7 +235,7 @@ function equationHandler(el) {
 }
 
 function pTagParser(el) {
-    let parsedEl = document.createElement(el.tagName)
+  let parsedEl = document.createElement(el.tagName)
   let nodes = []
 
   for (let child of el.childNodes) {
@@ -257,19 +262,22 @@ function pTagParser(el) {
     if (parsedEl.textContent.trim().length == 0) {
       return null
     }
+  }
 
-    if (el.classList.contains('text-small')) {
-      parsedEl.innerHTML = '<sub>' + parsedEl.innerHTML + '</sub>'
-    }
+  if (el.classList.contains('text-small')) {
+    parsedEl.innerHTML = '<sub>' + parsedEl.innerHTML + '</sub>'
+  }
 
-    if (el.classList.contains('underline')) {
-      parsedEl.innerHTML = '<u>' + parsedEl.innerHTML + '</u>'
-    }
+  if (el.classList.contains('underline')) {
+    parsedEl.innerHTML = '<u>' + parsedEl.innerHTML + '</u>'
+  }
 
-    if (el.classList.contains('indent')) {
-      parsedEl.classList.add('hypo-text-indent')
-    }
+  if (el.classList.contains('indent')) {
+    parsedEl.classList.add('hypo-text-indent')
+  }
 
+  if (el.classList.contains('align-center')) {
+    parsedEl.style.textAlign = "center"
   }
   return parsedEl
 }
@@ -410,7 +418,11 @@ function spanTagParser(el) {
   nodes.forEach(node => parsedEl.appendChild(node))
 
   if (el.classList.contains('blue-text')) {
-    parsedEl.style = `color:#000080;`
+    parsedEl.style.color = "#0000ff"
+  }
+
+  if (el.classList.contains('red-text')) {
+    parsedEl.style.color = "#ff0000"
   }
 
   return parsedEl

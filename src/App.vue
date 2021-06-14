@@ -11,28 +11,40 @@
     "
   >
     <main class="max-w-screen-lg w-full flex flex-col items-center">
-      <div class="w-full">
-        <h3>Input</h3>
-        <textarea
-          v-model="input"
-          cols="30"
-          rows="10"
-          class="w-11/12 border bg-gray-70 focus:outline-none p-2"
-        ></textarea>
-      </div>
-      <div class="w-full">
-        <h3>Output</h3>
-        <textarea
-          v-model="output"
-          cols="30"
-          rows="10"
-          class="w-11/12 border bg-gray-70 focus:outline-none p-2"
-        ></textarea>
+      <div class="w-full flex mt-2">
+        <div class="w-full">
+          <h3>Input</h3>
+          <textarea
+            v-model="input"
+            cols="30"
+            rows="10"
+            class="w-11/12 border bg-gray-70 focus:outline-none p-2"
+          ></textarea>
+        </div>
+        <div class="w-full">
+          <h3>Output</h3>
+          <textarea
+            v-model="output"
+            cols="30"
+            rows="10"
+            class="w-11/12 border bg-gray-70 focus:outline-none p-2"
+          ></textarea>
+        </div>
       </div>
       <div class="space-x-2">
         <button @click="parse" class="button">Parse</button>
-        <button @click="copyToClipboard" class="button">Copy output</button>
+        <button @click="copyAll" class="button">Copy output</button>
         <button @click="clear" class="button">Clear text</button>
+      </div>
+      <div v-if="output.length > 1" class="space-x-2">
+        <button
+          v-for="pageNr in output.length"
+          :key="pageNr"
+          @click="copyPage(pageNr)"
+          class="button"
+        >
+          Copy page {{ pageNr }}
+        </button>
       </div>
       <div class="my-4">
         <h3>Preview</h3>
@@ -49,12 +61,12 @@ export default {
   name: "App",
   setup() {
     const input = ref("");
-    const output = ref("");
+    const output = ref([]);
     const preview = ref(null);
 
-    const copyToClipboard = function () {
+    const copy = function (text) {
       let copy = document.createElement("textarea");
-      copy.value = output.value;
+      copy.value = text;
       copy.setAttribute("readonly", "");
       document.body.appendChild(copy);
       copy.select();
@@ -63,9 +75,20 @@ export default {
       alert("Copied text to clipboard");
     };
 
+    const copyPage = function (pageNr) {
+      let text = output.value[pageNr - 1];
+      copy(text);
+    };
+
+    const copyAll = function () {
+      let text = "";
+      output.value.forEach((page) => (text += page));
+      copy(text);
+    };
+
     const parse = function () {
-      let newHTML = parser(input.value);
-      output.value = newHTML;
+      let newHTMLList = parser(input.value);
+      output.value = newHTMLList;
     };
 
     const clear = function () {
@@ -77,7 +100,8 @@ export default {
       input,
       output,
       preview,
-      copyToClipboard,
+      copyPage,
+      copyAll,
       parse,
       clear,
     };
@@ -95,7 +119,7 @@ export default {
 }
 
 .button {
-  @apply mt-2 bg-blue-500 border-4 border-blue-500 rounded-full py-1 w-32 focus:outline-none hover:border-blue-600 focus:bg-blue-600 ;
+  @apply mt-2 bg-blue-500 border-4 border-blue-500 rounded-full py-1 w-32 focus:outline-none hover:border-blue-600 focus:bg-blue-600;
 }
 
 .preview {
