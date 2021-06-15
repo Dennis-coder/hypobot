@@ -107,6 +107,12 @@ function componentParser(component) {
     return boxParser(component, 'pink')
   } else {
     let content = []
+
+    // Sometimes an article component only contains text
+    if (component.children.length == 0) {
+      content.push(distributor(component.firstChild))
+    }
+
     for (let child of component.children) {
       if (child.classList.contains('article-component')) {
         content.push(componentParser(child))
