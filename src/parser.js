@@ -205,7 +205,7 @@ function boxGenerator(content, color) {
   
   if (content[0].tagName == "H4") {
     box.setAttribute("data-show-header", "true")
-    title = content.shift()
+    let title = content.shift()
     title.classList.add("simplebox-title")
     box.appendChild(title)
   }
