@@ -4,16 +4,21 @@ export function parser(html) {
   let main = document.createElement('div')
   main.innerHTML = html
   let content = []
+  let hasPages = true
 
   let pages = main.querySelectorAll('.article-page')
   if (pages.length == 0) {
     pages = [main]
+    hasPages = false
   }
 
-
   for (let page of pages) {
-    let parsedPage = pageParser(page)
+    let parsedPage = distributor(page)
     content.push(parsedPage)
+  }
+
+  if (!hasPages) {
+    content = [content]
   }
 
   let out = []
@@ -28,126 +33,28 @@ export function parser(html) {
   return out
 }
 
-function pageParser(page) {
-  let content = []
-
-  let cells = page.querySelectorAll('.cell:not(.cell-empty) .cell-content')
-  if (cells.length == 0) {
-    cells = [page]
-  }
-
-  for (let cell of cells) {
-    let parsedCell = cellParser(cell)
-    content.push(parsedCell)
-  }
-  return content.flat(Infinity)
-}
-
-function cellParser(cell) {
-  let content = []
-  let parsedComponent = null
-  let components = cell.children
-
-  if (components.length == 0) {
-    components = [cell]
-  }
-
-  for (let component of components) {
-    if (component.classList.contains('article-component')) {
-      parsedComponent = componentParser(component)
-    } else if (component.classList.contains('expandable')) {
-      parsedComponent = expandableDivParser(component)
-    } else {
-      parsedComponent = distributor(component)
-    }
-    if (parsedComponent) {
-      content.push(parsedComponent)
-    }
-  }
-  return content
-}
-
-function expandableDivParser(box) {
-  let content = []
-  let title = document.createElement("h4")
-  let titleDiv = box.querySelector('.expandable-title')
-  title.innerHTML = titleDiv.textContent
-  content.push(title)
-  if (titleDiv.nextElementSibling) {
-    let disc = titleDiv.nextElementSibling.innerHTML
-    let el = document.createElement('p')
-    el.innerHTML = `<i>${disc}</i>`
-    content.push(el)
-  }
-  let component = box.querySelector('.article-component')
-  let parsedComponent = componentParser(component)
-  content.push(parsedComponent)
-  content = content.flat(Infinity)
-  return boxGenerator(content, "default")
-}
-
-function componentParser(component) {
-  if (component.classList.contains('box-summary')) {
-    return boxParser(component, 'olive')
-  } else if (component.classList.contains('box-standard')) {
-    return boxParser(component, 'default')
-  } else if (component.classList.contains('box-help')) {
-    return boxParser(component, 'yellow')
-  } else if (component.classList.contains('box-practice')) {
-    return boxParser(component, 'blue')
-  } else if (component.classList.contains('box-example')) {
-    return boxParser(component, 'pink')
-  } else {
-    let content = []
-    for (let child of component.children) {
-      if (child.classList.contains('article-component')) {
-        content.push(componentParser(child))
-      } else if (child.classList.contains('gca-component')) {
-        content.push(audioComponent())
-      } else if (child.classList.contains('questbox')) {
-        return null
-      } else {
-        let parsedEl = distributor(child)
-        if (parsedEl) {
-          content.push(parsedEl)
-        }
-      }
-    }
-    return content
-  }
-}
-
-function audioComponent() {
-  let el = document.createElement("div")
-  el.innerHTML = `<div class="hypo-audio" style="text-align:center"><audio controls="controls" controlslist="nodownload" src="this.data.src"><source src="this.data.src" /></audio></div>`
-  el = el.firstElementChild
-  return el
-}
-
-function boxParser(box, color) {
-  let children = box.children
-  let content = []
-  for (let child of children) {
-    if (child.classList.contains('article-component')) {
-      content.push(componentParser(child))
-    }
-  }
-  content = content.flat()
-  let parsedBox = boxGenerator(content, color)
-  return parsedBox
-}
-
 function distributor(el) {
-  if (el.tagName == undefined) {
-    return el
+  if (el.classList) {
+    if (el.classList.contains('article-page')) return pageParser(el)
+    if (el.classList.contains('cell-group')) return cellGroupParser(el)
+    if (el.classList.contains('cell')) return cellParser(el)
+    if (el.classList.contains('cell-content')) return cellContentParser(el)
+    if (el.classList.contains('box-summary')) return boxParser(el, 'olive')
+    if (el.classList.contains('box-standard')) return boxParser(el, 'default')
+    if (el.classList.contains('box-help')) return boxParser(el, 'yellow')
+    if (el.classList.contains('box-practice')) return boxParser(el, 'blue')
+    if (el.classList.contains('box-example')) return boxParser(el, 'pink')
+    if (el.classList.contains('article-component')) return componentParser(el)
+    if (el.classList.contains('expandable')) return expandableDivParser(el)
+    if (el.classList.contains('gca-component')) return gcaComponentParser(el)
+    if (el.classList.contains('questbox')) return null
+    if (el.classList.contains('htmlcomponent-header')) return componentHeaderParser(el)
+    if (el.classList.contains('mjx-chtml')) return equationHandler(el)
   }
-  if (el.classList.contains('htmlcomponent-header')) {
-    return componentHeaderParser(el)
-  }
-  if (el.classList.contains('mjx-chtml')) {
-    return equationHandler(el)
-  }
+
   switch (el.tagName) {
+    case undefined:
+      return el
     case "P":
       return pTagParser(el)
     case "STRONG":
@@ -184,22 +91,124 @@ function distributor(el) {
       return imgTagParser(el)
     case 'SUB':
       return subTagParser(el)
+    case 'DIV':
+      return divTagParser(el)
   }
+}
+
+function pageParser(el) {
+  let content = []
+
+  let cells = el.querySelectorAll('.cell:not(.cell-empty)')
+
+  for (let cell of cells) {
+    let parsedCell = distributor(cell)
+    content.push(parsedCell)
+  }
+  return content.flat(Infinity)
+}
+
+function cellGroupParser(el) {
+  let content = []
+
+  let cells = el.querySelectorAll('.cell:not(.cell-empty)')
+
+  for (let cell of cells) {
+    let parsedCell = distributor(cell)
+    if (parsedCell) {
+      content.push(parsedCell)
+    }
+  }
+  return content.flat(Infinity)
+}
+
+function cellParser(el) {
+  let content = []
+
+  for (let component of el.childNodes) {
+    let parsedCellContent = distributor(component)
+
+    if (parsedCellContent) {
+      content.push(parsedCellContent)
+    }
+  }
+  return content
+}
+
+function cellContentParser(el) {
+  let content = []
+
+  for (let component of el.childNodes) {
+    let parsedComponent = distributor(component)
+
+    if (parsedComponent) {
+      content.push(parsedComponent)
+    }
+  }
+  return content
+}
+
+function expandableDivParser(box) {
+  let content = []
+  let titleDiv = box.querySelector('.expandable-title')
+  if (titleDiv) {
+    let title = document.createElement("h4")
+    title.innerHTML = titleDiv.textContent
+    content.push(title)
+
+    if (titleDiv.nextElementSibling) {
+      let disc = titleDiv.nextElementSibling.innerHTML
+      let el = document.createElement('p')
+      el.innerHTML = `<i>${disc}</i>`
+      content.push(el)
+    }
+  }
+
+  let contentDiv = box.querySelector('.expandable-area')
+  for (let child of contentDiv.childNodes) {
+    let parsedContent = distributor(child)
+    content.push(parsedContent)
+  }
+  content = content.flat(Infinity)
+  return boxGenerator(content, "default")
+}
+
+function componentParser(el) {
+  let content = []
+  for (let child of el.childNodes) {
+    let parsedEl = distributor(child)
+    if (parsedEl) {
+      content.push(parsedEl)
+    }
+  }
+  return content
+}
+
+function boxParser(box, color) {
+  let children = box.children
+  let content = []
+  for (let child of children) {
+    if (child.classList.contains('article-component')) {
+      content.push(componentParser(child))
+    }
+  }
+  content = content.flat()
+  let parsedBox = boxGenerator(content, color)
+  return parsedBox
 }
 
 function boxGenerator(content, color) {
   let box = document.createElement('div')
   box.classList.add("simplebox")
-  box.setAttribute("data-show-header", "true")
   box.classList.add(`hypo-box-${color}`)
   box.setAttribute("data-box-class", `hypo-box-${color}`)
-
-  let title = document.createElement('h4')
+  
   if (content[0].tagName == "H4") {
+    box.setAttribute("data-show-header", "true")
     title = content.shift()
+    title.classList.add("simplebox-title")
+    box.appendChild(title)
   }
-  title.classList.add("simplebox-title")
-  box.appendChild(title)
 
   let contentDiv = document.createElement('div')
   contentDiv.classList.add('simplebox-content')
@@ -209,6 +218,24 @@ function boxGenerator(content, color) {
   }
   box.appendChild(contentDiv)
   return box
+}
+
+function gcaComponentParser(el) {
+  if (el.querySelector('audio')) return gcaAudioComponent()
+  if (el.querySelector('.video-embed')) return gcaVideoComponent()
+}
+
+function gcaAudioComponent() {
+  let el = document.createElement("div")
+  el.innerHTML = `<div class="hypo-audio" style="text-align:center"><audio controls="controls" controlslist="nodownload" src="this.data.src"><source src="this.data.src" /></audio></div>`
+  el = el.firstElementChild
+  return el
+}
+
+function gcaVideoComponent() {
+  let temp = document.createElement('p')
+  temp.innerHTML = "<strong>[insert video here]</strong>"
+  return temp
 }
 
 function componentHeaderParser(el) {
@@ -555,4 +582,20 @@ function imgTagParser(el) {
   let temp = document.createElement('p')
   temp.innerHTML = "<strong>[insert image here]</strong>"
   return temp
+}
+
+function divTagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = []
+
+  for (let child of el.childNodes) {
+    let node = distributor(child)
+    if (node) {
+      nodes.push(node)
+    }
+  }
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  return parsedEl
 }
