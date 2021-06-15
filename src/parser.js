@@ -80,6 +80,14 @@ function expandableDivParser(box) {
     content.push(el)
   }
   let component = box.querySelector('.article-component')
+
+  if (component == null) {
+    // No article component found in the expandable div
+    let reminder = document.createElement("p")
+    reminder.innerHTML = "<strong>[insert contents of expandable box here]</strong>"
+    return reminder
+  }
+
   let parsedComponent = componentParser(component)
   content.push(parsedComponent)
   content = content.flat(Infinity)
