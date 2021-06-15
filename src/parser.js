@@ -1,30 +1,33 @@
 const Mathml2latex = require('mathml-to-latex');
 
+/**
+ * The exported function to be called in app.js
+ * @param {string} html - The html string to be parsed
+ * @var {HTMLDivElement} wrapper - A wrapper div element used to insert the thml to be parsed
+ * @var {HTMLDivElement[]} pages - A list of the different .article-page elements if the html to be parsed has pages or a list with the wrapper element
+ * @returns {string[]} List of the html string for every page
+ */
 export function parser(html) {
-  let main = document.createElement('div')
-  main.innerHTML = html
-  let content = []
+  let wrapper = document.createElement('div')
+  wrapper.innerHTML = html
   let hasPages = true
 
-  let pages = main.querySelectorAll('.article-page')
+  let pages = wrapper.querySelectorAll('.article-page')
   if (pages.length == 0) {
-    pages = [main]
+    pages = wrapper.childNodes
     hasPages = false
   }
 
-  for (let page of pages) {
-    let parsedPage = distributor(page)
-    content.push(parsedPage)
-  }
+  let parsedPages = distributeElements(pages)
 
   if (!hasPages) {
-    content = [content]
+    parsedPages = [parsedPages]
   }
 
   let out = []
-  for (let pageContent of content) {
+  for (let page of parsedPages) {
     let temp = document.createElement('div')
-    for (let el of pageContent) {
+    for (let el of page.flat(Infinity)) {
       temp.appendChild(el)
     }
     out.push(temp.innerHTML)
@@ -33,7 +36,16 @@ export function parser(html) {
   return out
 }
 
+/**
+ * Takes an element and distributes it to a parser function depending on classes and tagname
+ * @param {HTMLElement} el - The element to be parsed
+ * @returns {HTMLElement} The parsed element
+ */
 function distributor(el) {
+  if (!el) {
+    return null
+  }
+
   if (el.classList) {
     if (el.classList.contains('article-page')) return pageParser(el)
     if (el.classList.contains('cell-group')) return cellGroupParser(el)
@@ -96,113 +108,125 @@ function distributor(el) {
   }
 }
 
+/**
+ * Takes a list of elements and returns a list of the parsed elements
+ * @param {HTMLElement[]} els - The list of elements to be parsed
+ * @returns {HTMLElement[]} List of the parsed elements
+ */
+function distributeElements(els) {
+  let parsedEls = []
+  for (let el of els) {
+    let parsedEl = distributor(el)
+    if (parsedEl) {
+      parsedEls.push(parsedEl)
+    }
+  }
+  return parsedEls
+}
+
+/**
+ * Takes a page and returns a list of its parsed content
+ * @param {HTMLDivElement} el - The page to be parsed
+ * @var {HTMLDivElement[]} cells - List of the page's cells
+ * @returns {HTMLElement[]} List of the page's parsed content
+ */
 function pageParser(el) {
-  let content = []
-
   let cells = el.querySelectorAll('.cell:not(.cell-empty)')
-
-  for (let cell of cells) {
-    let parsedCell = distributor(cell)
-    content.push(parsedCell)
-  }
-  return content.flat(Infinity)
+  return distributeElements(cells)
 }
 
+/**
+ * Takes a cellgroup and returns a list of its parsed content
+ * @param {HTMLDivElement} el - The cellgroup to be parsed
+ * @var {HTMLDivElement[]} cells - List of the cellgroup's cells
+ * @returns {HTMLElement[]} List of the cellgroup's parsed content
+ */
 function cellGroupParser(el) {
-  let content = []
-
   let cells = el.querySelectorAll('.cell:not(.cell-empty)')
-
-  for (let cell of cells) {
-    let parsedCell = distributor(cell)
-    if (parsedCell) {
-      content.push(parsedCell)
-    }
-  }
-  return content.flat(Infinity)
+  return distributeElements(cells)
 }
 
+/**
+ * Takes a cell and returns a list of its parsed content
+ * @param {HTMLDivElement} el - The cell to be parsed
+ * @returns {HTMLElement[]} List of the cell's parsed content
+ */
 function cellParser(el) {
-  let content = []
-
-  for (let component of el.childNodes) {
-    let parsedCellContent = distributor(component)
-
-    if (parsedCellContent) {
-      content.push(parsedCellContent)
-    }
-  }
-  return content
+  return distributeElements(el.childNodes)
 }
 
+/**
+ * Takes a cell's content div and returns a list of its parsed content
+ * @param {HTMLDivElement} el - The cell's content div to be parsed
+ * @returns {HTMLElement[]} List of the cell's content div's parsed content
+ */
 function cellContentParser(el) {
-  let content = []
-
-  for (let component of el.childNodes) {
-    let parsedComponent = distributor(component)
-
-    if (parsedComponent) {
-      content.push(parsedComponent)
-    }
-  }
-  return content
+  return distributeElements(el.childNodes)
 }
 
+/**
+ * Takes the div element of an expandable box and returns the parsed box
+ * @param {HTMLDivElement} box - The div element of an expandable box
+ * @var {HTMLDivElement} contentDiv - The expandable box's content div
+ * @var {HTMLDivElement} titleDiv - The expandable box's title div
+ * @returns {HTMLDivElement} - The parsed box
+ */
 function expandableDivParser(box) {
-  let content = []
+  let contentDiv = box.querySelector('.expandable-area')
+  let parsedContent = distributeElements(contentDiv.childNodes)
+
   let titleDiv = box.querySelector('.expandable-title')
   if (titleDiv) {
+    if (titleDiv.nextElementSibling) {
+      let discriptionText = titleDiv.nextElementSibling.innerHTML
+      let discription = document.createElement('p')
+      discription.innerHTML = `<i>${discriptionText}</i>`
+      parsedContent.unshift(discription)
+    }
+
     let title = document.createElement("h4")
     title.innerHTML = titleDiv.textContent
-    content.push(title)
-
-    if (titleDiv.nextElementSibling) {
-      let disc = titleDiv.nextElementSibling.innerHTML
-      let el = document.createElement('p')
-      el.innerHTML = `<i>${disc}</i>`
-      content.push(el)
-    }
+    parsedContent.unshift(title)
   }
 
-  let contentDiv = box.querySelector('.expandable-area')
-  for (let child of contentDiv.childNodes) {
-    let parsedContent = distributor(child)
-    content.push(parsedContent)
-  }
-  content = content.flat(Infinity)
-  return boxGenerator(content, "default")
+  parsedContent = parsedContent.flat(Infinity)
+  return boxGenerator(parsedContent, "default")
 }
 
+/**
+ * Takes a component div and returns a list of its parsed content
+ * @param {HTMLDivElement} el - The component div to be parsed
+ * @returns {HTMLElement[]} List of the component div's parsed content
+ */
 function componentParser(el) {
-  let content = []
-  for (let child of el.childNodes) {
-    let parsedEl = distributor(child)
-    if (parsedEl) {
-      content.push(parsedEl)
-    }
-  }
-  return content
+  return distributeElements(el.childNodes)
 }
 
+
+/**
+ * Takes a box div and returns the parsed box
+ * @param {HTMLDivElement} box - The box div to be parsed
+ * @param {string} color - The color the parsed box will be
+ * @returns {HTMLDivElement} - The parsed box
+ */
 function boxParser(box, color) {
-  let children = box.children
-  let content = []
-  for (let child of children) {
-    if (child.classList.contains('article-component')) {
-      content.push(componentParser(child))
-    }
-  }
-  content = content.flat()
-  let parsedBox = boxGenerator(content, color)
-  return parsedBox
+  let content = distributeElements(box.childNodes).flat(Infinity)
+  return boxGenerator(content, color)
 }
 
+/**
+ * Takes a list of the contents of a box and its color, creates the box and returns the box
+ * @param {HTMLElement[]} content - List of the box's content
+ * @param {string} color - String of the box's color
+ * @var {HTMLDivElement} box - The created box div
+ * @returns {HTMLDivElement} A new box
+ */
 function boxGenerator(content, color) {
   let box = document.createElement('div')
   box.classList.add("simplebox")
   box.classList.add(`hypo-box-${color}`)
   box.setAttribute("data-box-class", `hypo-box-${color}`)
-  
+
   if (content[0].tagName == "H4") {
     box.setAttribute("data-show-header", "true")
     let title = content.shift()
@@ -213,18 +237,27 @@ function boxGenerator(content, color) {
   let contentDiv = document.createElement('div')
   contentDiv.classList.add('simplebox-content')
 
-  for (let c of content) {
-    contentDiv.appendChild(c)
+  for (let el of content) {
+    contentDiv.appendChild(el)
   }
   box.appendChild(contentDiv)
   return box
 }
 
+/**
+ * Takes a gca component and returns it parsed
+ * @param {HTMLDivElement} el - The gca component to be parsed
+ * @returns {(HTMLDivElement | HTMLPElement)} The parsed component
+ */
 function gcaComponentParser(el) {
   if (el.querySelector('audio')) return gcaAudioComponent()
   if (el.querySelector('.video-embed')) return gcaVideoComponent()
 }
 
+/**
+ * Creates an audio component and returns it
+ * @returns {HTMLDivElement} An audio component
+ */
 function gcaAudioComponent() {
   let el = document.createElement("div")
   el.innerHTML = `<div class="hypo-audio" style="text-align:center"><audio controls="controls" controlslist="nodownload" src="this.data.src"><source src="this.data.src" /></audio></div>`
@@ -232,12 +265,21 @@ function gcaAudioComponent() {
   return el
 }
 
+/**
+ * Creates a p element and returns it
+ * @returns {HTMLPElement} A p element
+ */
 function gcaVideoComponent() {
   let temp = document.createElement('p')
   temp.innerHTML = "<strong>[insert video here]</strong>"
   return temp
 }
 
+/**
+ * Takes a component header div and returns an h4 element with the headers parsed text
+ * @param {HTMLDivElement} el - The component header div to be parsed
+ * @returns {HTMLHeaderElement} An h4 element with the headers parsed text
+ */
 function componentHeaderParser(el) {
   let parsedEl = document.createElement('h4')
   let node = distributor(el.firstChild)
@@ -245,10 +287,16 @@ function componentHeaderParser(el) {
   return parsedEl
 }
 
+/**
+ * Takes a span element and returns its parsed equation
+ * @param {HTMLSpanElement} el - The span with the equation to be parsed
+ * @returns {HTMLSpanElement} A span with the parsed equation
+ */
 function equationHandler(el) {
   let equation = el.getAttribute('data-mathml')
   equation = Mathml2latex.convert(equation)
-
+  
+  // Some equation systems are bugged so the if statement tries to fix that
   if (equation.substring(0, 13) == "\\left{\\right.") {
     equation = equation.replace("\\left{\\right.", "\\begin{cases}") + "\\end{cases}"
   }
@@ -261,16 +309,14 @@ function equationHandler(el) {
   return parsedEl
 }
 
+/**
+ * Takes a p element and parses it depending on potential classes and children
+ * @param {HTMLPElement} el - The p element to be parsed
+ * @returns {(HTMLPElement | HTMLHeaderElement | null)} The parsed p element
+ */
 function pTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
+  let nodes = distributeElements(el.childNodes)
 
   if (el.classList.contains('title-2') || el.classList.contains('title-3') || el.classList.contains('ingress')) {
     parsedEl = document.createElement("h4")
@@ -309,86 +355,72 @@ function pTagParser(el) {
   return parsedEl
 }
 
+/**
+ * Takes a strong element and parses it
+ * @param {HTMLStrongElement} el - The strong element to be parsed
+ * @returns {HTMLStrongElement} The parsed strong element
+ */
 function strongTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
+  let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
-
   return parsedEl
 }
 
+/**
+ * Takes a em element and parses it
+ * @param {HTMLEmElement} el - The em element to be parsed
+ * @returns {HTMLIElement} The parsed i element
+ */
 function emTagParser(el) {
   let parsedEl = document.createElement('i')
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
+  let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
-
   return parsedEl
 }
 
+/**
+ * Takes a ul element and parses it
+ * @param {HTMLUlElement} el - The ul element to be parsed
+ * @returns {HTMLUlElement} The parsed ul element
+ */
 function ulTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
+  let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
-
   return parsedEl
 }
 
+/**
+ * Takes a ol element and parses it
+ * @param {HTMLOlElement} el - The ol element to be parsed
+ * @returns {HTMLOlElement} The parsed ol element
+ */
 function olTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
+  let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
-
   return parsedEl
 }
 
+/**
+ * Takes a li element and parses it
+ * @param {HTMLLiElement} el - The li element to be parsed
+ * @returns {HTMLLiElement} The parsed li element
+ */
 function liTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
+  let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
-
   return parsedEl
 }
 
+/**
+ * Takes a blockquote element and parses it
+ * @param {HTMLBlockquoteElement} el - The blockquote element to be parsed
+ * @var {HTMLSpanElement} author - The author if provided
+ * @returns {HTMLBlockquoteElement} The parsed blockquote element
+ */
 function blockquoteTagParser(el) {
   let author = el.querySelector('.quote-source')
   if (author) {
@@ -397,14 +429,7 @@ function blockquoteTagParser(el) {
 
   let parsedEl = document.createElement(el.tagName)
   let p = document.createElement('p')
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
+  let nodes = distributeElements(el.childNodes)
 
   nodes.forEach(node => p.appendChild(node))
 
@@ -415,32 +440,26 @@ function blockquoteTagParser(el) {
   return parsedEl
 }
 
+/**
+ * Takes a h4 element and parses it
+ * @param {HTMLHeaderElement} el - The h4 element to be parsed
+ * @returns {HTMLHeaderElement} The parsed h4 element
+ */
 function h4TagParser(el) {
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
+  let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
-
   return parsedEl
 }
 
+/**
+ * Takes a span element and parses it depending on potential classes
+ * @param {HTMLSpanElement} el - The span element to be parsed
+ * @returns {HTMLSpanElement} The parsed span element
+ */
 function spanTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
+  let nodes = distributeElements(el.childNodes)
 
   nodes.forEach(node => parsedEl.appendChild(node))
 
@@ -455,20 +474,18 @@ function spanTagParser(el) {
   return parsedEl
 }
 
+/**
+ * Takes a table element and parses it
+ * @param {HTMLTableElement} el - The table element to be parsed
+ * @returns {HTMLDivElement} The parsed table in a div element
+ */
 function tableTagParser(el) {
   let parsedDiv = document.createElement('div')
   parsedDiv.classList.add('table-responsive')
   let parsedTable = document.createElement('table')
   parsedTable.classList.add(['hypo-table-responsive', 'table', 'table-bordered'])
 
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
+  let nodes = distributeElements(el.childNodes)
 
   nodes.forEach(node => parsedTable.appendChild(node))
 
@@ -476,53 +493,45 @@ function tableTagParser(el) {
   return parsedDiv
 }
 
+/**
+ * Takes a tbody element and parses it
+ * @param {HTMLElement} el - The tbody element to be parsed
+ * @returns {HTMLElement} The parsed tbody element
+ */
 function tbodyTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
+  let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
-
   return parsedEl
 }
 
+/**
+ * Takes a tr element and parses it
+ * @param {HTMLTableRowElement} el - The tr element to be parsed
+ * @returns {HTMLTableRowElement} The parsed tr element
+ */
 function trTagParser(el) {
+  console.log(el)
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.children) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
+  let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
-
   return parsedEl
 }
 
+/**
+ * Takes a td element and parses it
+ * @param {HTMLElement} el - The td element to be parsed
+ * @returns {HTMLElement} The parsed td element
+ */
 function tdTagParser(el) {
-  if (el.textContent.trim().length == 0) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = distributeElements(el.childNodes)
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  if (parsedEl.textContent.trim().length == 0) {
     return
   }
-  let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
-  nodes.forEach(node => parsedEl.appendChild(node))
 
   let colspan = el.getAttribute('colspan')
   if (colspan) {
@@ -532,19 +541,17 @@ function tdTagParser(el) {
   return parsedEl
 }
 
+/**
+ * Takes a th element and parses it
+ * @param {HTMLElement} el - The th element to be parsed
+ * @returns {HTMLElement} The parsed th element
+ */
 function thTagParser(el) {
   if (el.textContent.trim().length == 0) {
     return
   }
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
+  let nodes = distributeElements(el.childNodes)
 
   nodes.forEach(node => parsedEl.appendChild(node))
 
@@ -556,46 +563,49 @@ function thTagParser(el) {
   return parsedEl
 }
 
+/**
+ * Takes a sub element and parses it
+ * @param {HTMLSubElement} el - The sub element to be parsed
+ * @returns {HTMLSubElement} The parsed sub element
+ */
 function subTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
+  let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
-
   return parsedEl
 }
 
+/**
+ * Takes a figure element and parses it
+ * @param {HTMLElement} el - The figure element to be parsed
+ * @returns {HTMLPElement} The parsed p element
+ */
 function figureTagParser(el) {
   let temp = document.createElement('p')
   temp.innerHTML = "<strong>[insert image here]</strong>"
   return temp
 }
 
+/**
+ * Takes an image element and parses it
+ * @param {HTMLImageElement} el - The image element to be parsed
+ * @returns {HTMLPElement} The parsed p element
+ */
 function imgTagParser(el) {
   let temp = document.createElement('p')
   temp.innerHTML = "<strong>[insert image here]</strong>"
   return temp
+  HTMLIma
 }
 
+/**
+ * Takes a div element and parses it
+ * @param {HTMLDivElement} el - The div element to be parsed
+ * @returns {HTMLDivElement} The parsed div element
+ */
 function divTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
-  let nodes = []
-
-  for (let child of el.childNodes) {
-    let node = distributor(child)
-    if (node) {
-      nodes.push(node)
-    }
-  }
-
+  let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
-
   return parsedEl
 }

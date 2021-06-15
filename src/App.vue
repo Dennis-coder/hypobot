@@ -32,7 +32,6 @@
         </div>
       </div>
       <div class="space-x-2">
-        <button @click="parse" class="button">Parse</button>
         <button @click="copyAll" class="button">Copy output</button>
         <button @click="clear" class="button">Clear text</button>
       </div>
@@ -55,7 +54,7 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { parser } from "./parser.js";
 export default {
   name: "App",
@@ -63,6 +62,11 @@ export default {
     const input = ref("");
     const output = ref([]);
     const preview = ref(null);
+
+    watch(input, (text, _prevText) => {
+      let newHTMLList = parser(text);
+      output.value = newHTMLList;
+    })
 
     const copy = function (text) {
       let copy = document.createElement("textarea");
