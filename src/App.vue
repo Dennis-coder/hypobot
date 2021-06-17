@@ -45,6 +45,9 @@
           Copy page {{ pageNr }}
         </button>
       </div>
+      <div class="mt-4" v-if="textCopied">
+          Copied text to clipboard
+      </div>
       <div class="my-4">
         <h3>Preview</h3>
         <div ref="preview" class="preview" v-html="output"></div>
@@ -62,6 +65,7 @@ export default {
     const input = ref("");
     const output = ref([]);
     const preview = ref(null);
+    const textCopied = ref(false)
 
     watch(input, (text, _prevText) => {
       let newHTMLList = parser(text);
@@ -76,7 +80,7 @@ export default {
       copy.select();
       document.execCommand("copy");
       document.body.removeChild(copy);
-      alert("Copied text to clipboard");
+      textCopied.value = true
     };
 
     const copyPage = function (pageNr) {
@@ -98,6 +102,7 @@ export default {
     const clear = function () {
       input.value = "";
       output.value = "";
+      textCopied.value = false
     };
 
     return {
@@ -108,6 +113,7 @@ export default {
       copyAll,
       parse,
       clear,
+      textCopied,
     };
   },
 };
