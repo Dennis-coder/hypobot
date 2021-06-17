@@ -72,7 +72,7 @@ export default {
       output.value = newHTMLList;
     })
 
-    const copy = function (text) {
+    const copy = async function (text) {
       let copy = document.createElement("textarea");
       copy.value = text;
       copy.setAttribute("readonly", "");
@@ -81,6 +81,8 @@ export default {
       document.execCommand("copy");
       document.body.removeChild(copy);
       textCopied.value = true
+      await new Promise(r => setTimeout(r, 2000));
+      textCopied.value = false
     };
 
     const copyPage = function (pageNr) {
@@ -101,7 +103,7 @@ export default {
 
     const clear = function () {
       input.value = "";
-      output.value = "";
+      output.value = [];
       textCopied.value = false
     };
 

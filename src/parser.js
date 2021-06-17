@@ -105,6 +105,8 @@ function distributor(el) {
       return subTagParser(el)
     case 'DIV':
       return divTagParser(el)
+    case 'A':
+      return aTagParser(el)
   }
 }
 
@@ -202,7 +204,6 @@ function componentParser(el) {
   return distributeElements(el.childNodes)
 }
 
-
 /**
  * Takes a box div and returns the parsed box
  * @param {HTMLDivElement} box - The box div to be parsed
@@ -295,7 +296,7 @@ function componentHeaderParser(el) {
 function equationHandler(el) {
   let equation = el.getAttribute('data-mathml')
   equation = Mathml2latex.convert(equation)
-  
+
   // Some equation systems are bugged so the if statement tries to fix that
   if (equation.substring(0, 13) == "\\left{\\right.") {
     equation = equation.replace("\\left{\\right.", "\\begin{cases}") + "\\end{cases}"
@@ -595,7 +596,6 @@ function imgTagParser(el) {
   let temp = document.createElement('p')
   temp.innerHTML = "<strong>[insert image here]</strong>"
   return temp
-  HTMLIma
 }
 
 /**
@@ -607,5 +607,24 @@ function divTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
   let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
+  return parsedEl
+}
+
+function aTagParser(el) {
+  let parsedEl = document.createElement(el.tagName)
+  let nodes = distributeElements(el.childNodes)
+
+  nodes.forEach(node => parsedEl.appendChild(node))
+
+  let target = el.getAttribute('target')
+  if (target) {
+    parsedEl.setAttribute('target', target)
+  }
+
+  let href = el.getAttribute('href')
+  if (href) {
+    parsedEl.setAttribute('href', href)
+  }
+
   return parsedEl
 }
