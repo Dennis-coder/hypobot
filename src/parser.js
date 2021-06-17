@@ -1,9 +1,9 @@
 const Mathml2latex = require('mathml-to-latex');
 
 /**
- * The exported function to be called in app.js
+ * Parses a Gleerups article into the format used in the Cortexio editor
  * @param {string} html - The html string to be parsed
- * @var {HTMLDivElement} wrapper - A wrapper div element used to insert the thml to be parsed
+ * @var {HTMLDivElement} wrapper - A wrapper div element used to insert the html to be parsed
  * @var {HTMLDivElement[]} pages - A list of the different .article-page elements if the html to be parsed has pages or a list with the wrapper element
  * @returns {string[]} List of the html string for every page
  */
@@ -228,11 +228,18 @@ function boxGenerator(content, color) {
   box.classList.add(`hypo-box-${color}`)
   box.setAttribute("data-box-class", `hypo-box-${color}`)
 
+  // Boxes usually have some title
   if (content[0].tagName == "H4") {
     box.setAttribute("data-show-header", "true")
     let title = content.shift()
     title.classList.add("simplebox-title")
     box.appendChild(title)
+  } else {
+    box.setAttribute("data-show-header", "false")
+    // If the box has no header the h4 tag should still be there (but hidden)
+    let hiddenTitle = document.createElement("h4")
+    hiddenTitle.classList.add("simplebox-title", "hidden")
+    box.appendChild(hiddenTitle)
   }
 
   let contentDiv = document.createElement('div')
@@ -267,8 +274,8 @@ function gcaAudioComponent() {
 }
 
 /**
- * Creates a p element and returns it
- * @returns {HTMLPElement} A p element
+ * Create a placeholder for embedded videos
+ * @returns {HTMLPElement} A p element with the reminder
  */
 function gcaVideoComponent() {
   let temp = document.createElement('p')
