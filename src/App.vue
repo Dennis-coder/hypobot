@@ -16,6 +16,7 @@
           <h3>Input</h3>
           <textarea
             v-model="input"
+            @input="parse"
             cols="30"
             rows="10"
             class="w-11/12 border bg-gray-70 focus:outline-none p-2"
@@ -54,7 +55,7 @@
 </template>
 
 <script>
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import { parser } from "./parser.js";
 export default {
   name: "App",
@@ -62,11 +63,6 @@ export default {
     const input = ref("");
     const output = ref([]);
     const preview = ref(null);
-
-    watch(input, (text, _prevText) => {
-      let newHTMLList = parser(text);
-      output.value = newHTMLList;
-    })
 
     const copy = function (text) {
       let copy = document.createElement("textarea");

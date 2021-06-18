@@ -1,3 +1,5 @@
+import { parse } from 'postcss';
+
 const Mathml2latex = require('mathml-to-latex');
 
 /**
@@ -349,9 +351,8 @@ function pTagParser(el) {
     parsedEl.classList.add('hypo-text-indent')
   }
 
-  if (el.classList.contains('align-center')) {
-    parsedEl.style.textAlign = "center"
-  }
+  parsedEl.style.textAlign = el.style.textAlign
+
   return parsedEl
 }
 
@@ -381,25 +382,27 @@ function emTagParser(el) {
 
 /**
  * Takes a ul element and parses it
- * @param {HTMLUlElement} el - The ul element to be parsed
- * @returns {HTMLUlElement} The parsed ul element
+ * @param {HTMLUListElement} el - The ul element to be parsed
+ * @returns {HTMLUListElement} The parsed ul element
  */
 function ulTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
   let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
+  parsedEl.style.listStyleType = el.style.listStyleType
   return parsedEl
 }
 
 /**
  * Takes a ol element and parses it
- * @param {HTMLOlElement} el - The ol element to be parsed
- * @returns {HTMLOlElement} The parsed ol element
+ * @param {HTMLOListElement} el - The ol element to be parsed
+ * @returns {HTMLOListElement} The parsed ol element
  */
 function olTagParser(el) {
   let parsedEl = document.createElement(el.tagName)
   let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
+  parsedEl.style.listStyleType = el.style.listStyleType
   return parsedEl
 }
 
@@ -471,6 +474,8 @@ function spanTagParser(el) {
     parsedEl.style.color = "#ff0000"
   }
 
+  parsedEl.style.textDecoration = el.style.textDecoration
+
   return parsedEl
 }
 
@@ -511,10 +516,15 @@ function tbodyTagParser(el) {
  * @returns {HTMLTableRowElement} The parsed tr element
  */
 function trTagParser(el) {
-  console.log(el)
   let parsedEl = document.createElement(el.tagName)
   let nodes = distributeElements(el.childNodes)
+
   nodes.forEach(node => parsedEl.appendChild(node))
+
+  if (parsedEl.textContent.trim().length == 0) {
+    return null
+  }
+
   return parsedEl
 }
 
@@ -530,13 +540,20 @@ function tdTagParser(el) {
   nodes.forEach(node => parsedEl.appendChild(node))
 
   if (parsedEl.textContent.trim().length == 0) {
-    return
+    return null
   }
 
   let colspan = el.getAttribute('colspan')
   if (colspan) {
     parsedEl.setAttribute('colspan', colspan)
   }
+
+  let rowspan = el.getAttribute('rowspan')
+  if (rowspan) {
+    parsedEl.setAttribute('rowspan', rowspan)
+  }
+
+  parsedEl.style.textAlign = el.style.textAlign
 
   return parsedEl
 }
@@ -547,18 +564,26 @@ function tdTagParser(el) {
  * @returns {HTMLElement} The parsed th element
  */
 function thTagParser(el) {
-  if (el.textContent.trim().length == 0) {
-    return
-  }
   let parsedEl = document.createElement(el.tagName)
   let nodes = distributeElements(el.childNodes)
-
+  
   nodes.forEach(node => parsedEl.appendChild(node))
+  
+  if (parsedEl.textContent.trim().length == 0) {
+    return null
+  }
 
   let colspan = el.getAttribute('colspan')
   if (colspan) {
     parsedEl.setAttribute('colspan', colspan)
   }
+  
+  let rowspan = el.getAttribute('rowspan')
+  if (rowspan) {
+    parsedEl.setAttribute('rowspan', rowspan)
+  }
+
+  parsedEl.style.textAlign = el.style.textAlign
 
   return parsedEl
 }
