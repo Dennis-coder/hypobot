@@ -1,5 +1,3 @@
-import { parse } from 'postcss';
-
 const Mathml2latex = require('mathml-to-latex');
 
 /**
@@ -380,15 +378,9 @@ function emTagParser(el) {
 }
 
 /**
-<<<<<<< HEAD
  * Takes a ul element and parses it
  * @param {HTMLUListElement} el - The ul element to be parsed
  * @returns {HTMLUListElement} The parsed ul element
-=======
- * Parses a ul element
- * @param {HTMLUlElement} el - The ul element to be parsed
- * @returns {HTMLUlElement} The parsed ul element
->>>>>>> 4fd75fc3d18e6f1b799f8263052b47edee9f0778
  */
 function ulTagParser(el) {
   let parsedEl = document.createElement('ul')
@@ -399,15 +391,9 @@ function ulTagParser(el) {
 }
 
 /**
-<<<<<<< HEAD
  * Takes a ol element and parses it
  * @param {HTMLOListElement} el - The ol element to be parsed
  * @returns {HTMLOListElement} The parsed ol element
-=======
- * Parses an ol element
- * @param {HTMLOlElement} el - The ol element to be parsed
- * @returns {HTMLOlElement} The parsed ol element
->>>>>>> 4fd75fc3d18e6f1b799f8263052b47edee9f0778
  */
 function olTagParser(el) {
   let parsedEl = document.createElement('ol')
@@ -528,12 +514,7 @@ function tbodyTagParser(el) {
  * @returns {HTMLTableRowElement} The parsed tr element
  */
 function trTagParser(el) {
-<<<<<<< HEAD
-  let parsedEl = document.createElement(el.tagName)
-=======
-  console.log(el)
   let parsedEl = document.createElement('tr')
->>>>>>> 4fd75fc3d18e6f1b799f8263052b47edee9f0778
   let nodes = distributeElements(el.childNodes)
 
   nodes.forEach(node => parsedEl.appendChild(node))
@@ -581,14 +562,7 @@ function tdTagParser(el) {
  * @returns {HTMLElement} The parsed th element
  */
 function thTagParser(el) {
-<<<<<<< HEAD
-  let parsedEl = document.createElement(el.tagName)
-=======
-  if (el.textContent.trim().length == 0) {
-    return
-  }
   let parsedEl = document.createElement('th')
->>>>>>> 4fd75fc3d18e6f1b799f8263052b47edee9f0778
   let nodes = distributeElements(el.childNodes)
   
   nodes.forEach(node => parsedEl.appendChild(node))
