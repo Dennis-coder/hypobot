@@ -68,7 +68,7 @@ export default {
     const preview = ref(null);
     const textCopied = ref(false)
 
-    const copy = function (text) {
+    const copy = async function (text) {
       let copy = document.createElement("textarea");
       copy.value = text;
       copy.setAttribute("readonly", "");
