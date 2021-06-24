@@ -102,12 +102,15 @@ function distributor(el) {
     case 'IMG':
       return imgTagParser(el)
     case 'SUB':
+      return subTagParser(el)
     case 'SUP':
-      return subAndSupTagParser(el, el.tagName)
+      return supTagParser(el)
     case 'DIV':
       return divTagParser(el)
     case 'A':
       return aTagParser(el)
+    case "U":
+      return uTagParser(el)
   }
 }
 
@@ -588,13 +591,24 @@ function thTagParser(el) {
 }
 
 /**
- * Parses a subscript/superscript element
- * @param {HTMLSubElement} el - The element to be parsed
- * @param {String} tagName - The name of the element, either 'sub' or 'sup'
- * @returns {HTMLElement} The parsed element
+ * Parses a subscript element
+ * @param {HTMLSubElement} el - The sub element to be parsed
+ * @returns {HTMLSubElement} The parsed sub element
  */
-function subAndSupTagParser(el, tagName) {
-  let parsedEl = document.createElement(tagName.toLowerCase())
+function subTagParser(el) {
+  let parsedEl = document.createElement('sub')
+  let nodes = distributeElements(el.childNodes)
+  nodes.forEach(node => parsedEl.appendChild(node))
+  return parsedEl
+}
+
+/**
+ * Parses a superscript element
+ * @param {HTMLSupElement} el - The sup element to be parsed
+ * @returns {HTMLSupElement} The parsed sup element
+ */
+function supTagParser(el) {
+  let parsedEl = document.createElement('sup')
   let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
   return parsedEl
@@ -655,5 +669,17 @@ function aTagParser(el) {
     parsedEl.setAttribute('href', href)
   }
 
+  return parsedEl
+}
+
+/**
+ * Parses a u element
+ * @param {HTMLElement} el - The u element to be parsed
+ * @returns {HTMLElement} The parsed u element
+ */
+ function uTagParser(el) {
+  let parsedEl = document.createElement('u')
+  let nodes = distributeElements(el.childNodes)
+  nodes.forEach(node => parsedEl.appendChild(node))
   return parsedEl
 }
