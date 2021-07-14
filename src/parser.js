@@ -56,6 +56,7 @@ function distributor(el) {
     if (el.classList.contains('box-help')) return boxParser(el, 'yellow')
     if (el.classList.contains('box-practice')) return boxParser(el, 'blue')
     if (el.classList.contains('box-example')) return boxParser(el, 'pink')
+    if (el.classList.contains('box-information')) return boxParser(el, 'yellow')
     if (el.classList.contains('article-component')) return componentParser(el)
     if (el.classList.contains('expandable')) return expandableDivParser(el)
     if (el.classList.contains('gca-component')) return gcaComponentParser(el)
@@ -111,6 +112,8 @@ function distributor(el) {
       return aTagParser(el)
     case "U":
       return uTagParser(el)
+    case "B":
+      return bTagParser(el)
   }
 }
 
@@ -279,7 +282,7 @@ function gcaAudioComponent() {
 
 /**
  * Creates a placeholder for embedded videos
- * @returns {HTMLPElement} A p element with the reminder
+ * @returns {HTMLPElement} The placeholder element
  */
 function gcaVideoComponent() {
   let el = document.createElement('p')
@@ -617,7 +620,7 @@ function supTagParser(el) {
 /**
  * Creates a placeholder for images
  * @param {HTMLElement} el - The figure element to be parsed
- * @returns {HTMLPElement} The parsed p element
+ * @returns {HTMLPElement} The placeholder element
  */
 function figureTagParser(el) {
   let temp = document.createElement('p')
@@ -628,7 +631,7 @@ function figureTagParser(el) {
 /**
  * Creates a placeholder for images
  * @param {HTMLImageElement} el - The image element to be parsed
- * @returns {HTMLPElement} The parsed p element
+ * @returns {HTMLPElement} The placeholder element
  */
 function imgTagParser(el) {
   let temp = document.createElement('p')
@@ -642,10 +645,7 @@ function imgTagParser(el) {
  * @returns {HTMLDivElement} The parsed div element
  */
 function divTagParser(el) {
-  let parsedEl = document.createElement('div')
-  let nodes = distributeElements(el.childNodes)
-  nodes.forEach(node => parsedEl.appendChild(node))
-  return parsedEl
+  return distributeElements(el.childNodes)
 }
 
 /**
@@ -679,6 +679,18 @@ function aTagParser(el) {
  */
  function uTagParser(el) {
   let parsedEl = document.createElement('u')
+  let nodes = distributeElements(el.childNodes)
+  nodes.forEach(node => parsedEl.appendChild(node))
+  return parsedEl
+}
+
+/**
+ * Parses a b element
+ * @param {HTMLElement} el - The b element to be parsed
+ * @returns {HTMLElement} The parsed b element
+ */
+ function bTagParser(el) {
+  let parsedEl = document.createElement('b')
   let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
   return parsedEl
