@@ -10,24 +10,19 @@ const Mathml2latex = require('mathml-to-latex');
 export function parser(html) {
   let wrapper = document.createElement('div')
   wrapper.innerHTML = html
-  let hasPages = true
 
-  let pages = wrapper.querySelectorAll('.article-page')
+  let pages = [] 
+  wrapper.querySelectorAll('.article-page').forEach((page) => {
+    pages.push(distributor(page))
+  })
   if (pages.length == 0) {
-    pages = wrapper.childNodes
-    hasPages = false
-  }
-
-  let parsedPages = distributeElements(pages)
-
-  if (!hasPages) {
-    parsedPages = [parsedPages]
+    pages.push(distributor(wrapper))
   }
 
   let out = []
-  for (let page of parsedPages) {
+  for (let page of pages) {
     let temp = document.createElement('div')
-    for (let el of page.flat(Infinity)) {
+    for (let el of page) {
       temp.appendChild(el)
     }
     out.push(temp.innerHTML)
@@ -57,6 +52,7 @@ function distributor(el) {
     if (el.classList.contains('box-practice')) return boxParser(el, 'blue')
     if (el.classList.contains('box-example')) return boxParser(el, 'pink')
     if (el.classList.contains('box-information')) return boxParser(el, 'yellow')
+    if (el.classList.contains('box-warning')) return boxParser(el, 'red')
     if (el.classList.contains('article-component')) return componentParser(el)
     if (el.classList.contains('expandable')) return expandableDivParser(el)
     if (el.classList.contains('gca-component')) return gcaComponentParser(el)
@@ -90,6 +86,8 @@ function distributor(el) {
       return liTagParser(el)
     case "TBODY":
       return tbodyTagParser(el)
+    case "THEAD":
+      return theadTagParser(el)
     case "TR":
       return trTagParser(el)
     case "TD":
@@ -130,7 +128,7 @@ function distributeElements(els) {
       parsedEls.push(parsedEl)
     }
   }
-  return parsedEls
+  return parsedEls.flat(Infinity)
 }
 
 /**
@@ -198,7 +196,7 @@ function expandableDivParser(box) {
     parsedContent.unshift(title)
   }
 
-  parsedContent = parsedContent.flat(Infinity)
+  parsedContent = parsedContent
   return boxGenerator(parsedContent, "default")
 }
 
@@ -218,7 +216,7 @@ function componentParser(el) {
  * @returns {HTMLDivElement} - The parsed box
  */
 function boxParser(box, color) {
-  let content = distributeElements(box.childNodes).flat(Infinity)
+  let content = distributeElements(box.childNodes)
   return boxGenerator(content, color)
 }
 
@@ -298,6 +296,9 @@ function gcaVideoComponent() {
 function componentHeaderParser(el) {
   let parsedEl = document.createElement('h4')
   let node = distributor(el.firstChild)
+  if (node.textContent.trim().length == 0) {
+    return null
+  }
   parsedEl.appendChild(node)
   return parsedEl
 }
@@ -453,7 +454,6 @@ function blockquoteTagParser(el) {
  * @returns {HTMLHeadingElement} The parsed h4 element
  */
 function h4TagParser(el) {
-  
   let parsedEl = document.createElement(el.tagName)
   let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
@@ -516,6 +516,18 @@ function tbodyTagParser(el) {
 }
 
 /**
+ * Parses a thead element
+ * @param {HTMLElement} el - The thead element to be parsed
+ * @returns {HTMLElement} The parsed thead element
+ */
+function theadTagParser(el) {
+  let parsedEl = document.createElement('thead')
+  let nodes = distributeElements(el.childNodes)
+  nodes.forEach(node => parsedEl.appendChild(node))
+  return parsedEl
+}
+
+/**
  * Parses a tr element
  * @param {HTMLTableRowElement} el - The tr element to be parsed
  * @returns {HTMLTableRowElement} The parsed tr element
@@ -571,9 +583,9 @@ function tdTagParser(el) {
 function thTagParser(el) {
   let parsedEl = document.createElement('th')
   let nodes = distributeElements(el.childNodes)
-  
+
   nodes.forEach(node => parsedEl.appendChild(node))
-  
+
   if (parsedEl.textContent.trim().length == 0) {
     return null
   }
@@ -582,7 +594,7 @@ function thTagParser(el) {
   if (colspan) {
     parsedEl.setAttribute('colspan', colspan)
   }
-  
+
   let rowspan = el.getAttribute('rowspan')
   if (rowspan) {
     parsedEl.setAttribute('rowspan', rowspan)
@@ -677,7 +689,7 @@ function aTagParser(el) {
  * @param {HTMLElement} el - The u element to be parsed
  * @returns {HTMLElement} The parsed u element
  */
- function uTagParser(el) {
+function uTagParser(el) {
   let parsedEl = document.createElement('u')
   let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
@@ -689,7 +701,7 @@ function aTagParser(el) {
  * @param {HTMLElement} el - The b element to be parsed
  * @returns {HTMLElement} The parsed b element
  */
- function bTagParser(el) {
+function bTagParser(el) {
   let parsedEl = document.createElement('b')
   let nodes = distributeElements(el.childNodes)
   nodes.forEach(node => parsedEl.appendChild(node))
